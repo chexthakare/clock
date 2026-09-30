@@ -1,0 +1,345 @@
+:root {
+  --tb-bg: #eef2f8;
+  --tb-ink: #16233a;
+  --tb-muted: #5d6b86;
+  --tb-line: #dfe6f2;
+  --tb-accent: #2f6df6;
+  --tb-accent-soft: #e7efff;
+  --tb-code-ink: #1d4ed8;
+  --tb-good: #12855f;
+  --tb-good-soft: #dcf5ea;
+  --tb-good-line: #b6e4d1;
+  --tb-ok: #b4750a;
+  --tb-ok-soft: #fdf0d5;
+  --tb-ok-line: #f0d9a4;
+  --tb-bad: #b4324a;
+  --tb-bad-soft: #fbe1e6;
+  --tb-bad-line: #f2c6cf;
+  --tb-surface: #ffffff;
+  --tb-surface-2: #f6f8fc;
+  --tb-glow-a: #d9e6ff;
+  --tb-glow-b: #ffe6ef;
+  --tb-conv-a: #f7faff;
+  --tb-conv-b: #fdf6f9;
+  --tb-shadow: rgba(22, 35, 58, .09);
+  --tb-chip-bg: #e7efff;
+  --tb-chip-line: #cfe0ff;
+  --tb-chip-ink: #1c47a8;
+  --tb-chip-dot: rgba(28, 71, 168, .12);
+  --tb-tag-bg: #f1f4fa;
+  --tb-tag-day-bg: #fff1da;
+  --tb-tag-day-ink: #96620a;
+  --tb-tag-night-bg: #e7ebf7;
+  --tb-tag-night-ink: #40508a;
+  --tb-radius: 18px;
+  --bs-body-color: var(--tb-ink);
+
+  /* Hero readability. The header sits straight on the animated sky, so these
+     follow the sky rather than the theme: the two are chosen independently,
+     and a light theme at night would otherwise put dark ink on a near-black
+     sky at 1.3:1. sky.js sets data-sky-phase every 15s from the real sun
+     altitude; with no attribute the light values apply, which is also what
+     the plain page background needs when the shader never runs. */
+  --sky-scrim: rgba(238, 242, 248, .82);
+  --sky-scrim-fade: rgba(238, 242, 248, 0);
+  --sky-chip: rgba(255, 255, 255, .58);
+  --sky-chip-line: rgba(22, 35, 58, .24);
+  --sky-ink: #16233a;
+  --sky-muted: #48566f;
+}
+
+[data-sky-phase="night"] {
+  --sky-scrim: rgba(8, 13, 26, .78);
+  --sky-scrim-fade: rgba(8, 13, 26, 0);
+  --sky-chip: rgba(10, 16, 30, .6);
+  --sky-chip-line: rgba(255, 255, 255, .24);
+  --sky-ink: #f3f7ff;
+  --sky-muted: #bac7e1;
+}
+
+[data-bs-theme="dark"] {
+  color-scheme: dark;
+  --tb-bg: #0b1220;
+  --tb-ink: #e9eef8;
+  --tb-muted: #98a6bf;
+  --tb-line: #26324a;
+  --tb-accent: #7ba2ff;
+  --tb-accent-soft: #1c2c4d;
+  --tb-code-ink: #a8c5ff;
+  --tb-good: #55e0a8;
+  --tb-good-soft: #0f3327;
+  --tb-good-line: #1d5a45;
+  --tb-ok: #f2c56a;
+  --tb-ok-soft: #372a10;
+  --tb-ok-line: #5f4718;
+  --tb-bad: #ff8fa1;
+  --tb-bad-soft: #3a1620;
+  --tb-bad-line: #61283a;
+  --tb-surface: #131c2b;
+  --tb-surface-2: #1a2436;
+  --tb-glow-a: #14243f;
+  --tb-glow-b: #2a1630;
+  --tb-conv-a: #121b2a;
+  --tb-conv-b: #1b1626;
+  --tb-shadow: rgba(0, 0, 0, .45);
+  --tb-chip-bg: #1c2c4d;
+  --tb-chip-line: #2c4372;
+  --tb-chip-ink: #b7ccff;
+  --tb-chip-dot: rgba(183, 204, 255, .16);
+  --tb-tag-bg: #1d2839;
+  --tb-tag-day-bg: #3a2c11;
+  --tb-tag-day-ink: #f2c56a;
+  --tb-tag-night-bg: #1e2740;
+  --tb-tag-night-ink: #a8b6dd;
+}
+
+[data-bs-theme="dark"] .step { color: #0b1220; }
+
+* { -webkit-tap-highlight-color: transparent; }
+
+body {
+  /* Kept as longhands on purpose: a var() inside the background shorthand
+     does not reliably re-resolve the colour when the theme changes. */
+  background-color: var(--tb-bg);
+  background-image:
+    radial-gradient(1200px 600px at 12% -8%, var(--tb-glow-a) 0%, transparent 60%),
+    radial-gradient(1000px 500px at 100% 0%, var(--tb-glow-b) 0%, transparent 55%);
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  color: var(--tb-ink);
+  transition: background-color .2s ease;
+}
+
+.page-wrap { max-width: 1120px; margin: 0 auto; padding: 28px 18px 40px; }
+
+/* ---------- header ---------- */
+/* The scrim is a soft pool rather than a card, so it reads as part of the sky
+   while still guaranteeing the text something to sit on. It fades downward,
+   leaving the HUD chip below it on the open sky, where its own translucent
+   backdrop already handles contrast. */
+/* z-index, not isolation: isolate. Both keep the scrim above .sky, but
+   isolation would make .hero a Backdrop Root and the HUD's backdrop-filter
+   would then blur only this element's own scrim instead of the sky. */
+.hero { position: relative; z-index: 0; }
+.hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -1.5rem -2.25rem -1.5rem;
+  pointer-events: none;
+  background: radial-gradient(125% 105% at 50% 0%,
+    var(--sky-scrim) 0%,
+    var(--sky-scrim-fade) 72%);
+}
+
+.hero__title { font-weight: 800; letter-spacing: -0.02em; font-size: clamp(1.6rem, 3.4vw, 2.2rem); color: var(--sky-ink); }
+.hero__sub { color: var(--sky-muted); font-size: 1rem; }
+
+/* The outline buttons sit far from the scrim's centre, where the radial has
+   already faded to almost nothing, so they carry their own backdrop instead of
+   relying on the gradient reaching them. */
+.hero .btn-outline-secondary {
+  color: var(--sky-ink);
+  border-color: var(--sky-chip-line);
+  background-color: var(--sky-chip);
+}
+
+/* ---------- footer ----------
+   Same problem and same cause as the header: .page-wrap is transparent, so
+   this text sits directly on the shader. It needs its own pool, anchored to
+   the bottom of the page to mirror the one at the top. Redefining the
+   Bootstrap variable is enough, because .text-secondary resolves through it. */
+.page-wrap footer {
+  position: relative;
+  z-index: 0;
+  --bs-secondary-color: var(--sky-muted);
+  color: var(--sky-muted);
+}
+.page-wrap footer::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -1.5rem -2.25rem -1.75rem;
+  pointer-events: none;
+  background: radial-gradient(125% 130% at 50% 100%,
+    var(--sky-scrim) 0%,
+    var(--sky-scrim-fade) 74%);
+}
+
+.badge-pill {
+  background: var(--tb-surface);
+  border: 1px solid var(--tb-line);
+  border-radius: 999px;
+  padding: .4rem .85rem;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--tb-muted);
+  box-shadow: 0 2px 8px var(--tb-shadow);
+}
+
+/* ---------- panels ---------- */
+.card-panel {
+  background: var(--tb-surface);
+  border: 1px solid var(--tb-line);
+  border-radius: var(--tb-radius);
+  padding: 1.25rem 1.25rem 1.4rem;
+  box-shadow: 0 10px 30px var(--tb-shadow);
+}
+
+.panel__title { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: .55rem; }
+.panel__hint { color: var(--tb-muted); font-size: .9rem; margin: .35rem 0 1rem; }
+.panel__hint code { background: var(--tb-accent-soft); color: var(--tb-code-ink); padding: .1rem .35rem; border-radius: 6px; }
+
+.step {
+  flex: 0 0 auto;
+  width: 1.7rem; height: 1.7rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--tb-accent); color: #fff;
+  border-radius: 50%;
+  font-size: .9rem; font-weight: 700;
+}
+
+/* ---------- search ---------- */
+.search-wrap { position: relative; }
+.search-wrap__icon {
+  position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+  color: var(--tb-muted); pointer-events: none;
+}
+.search-wrap__input { padding-left: 2.6rem; border-radius: 14px; border-color: var(--tb-line); }
+.search-wrap__input:focus { border-color: var(--tb-accent); box-shadow: 0 0 0 .25rem rgba(47, 109, 246, .22); }
+
+.search-results {
+  position: absolute; z-index: 30; inset-inline: 0; top: calc(100% + .35rem);
+  background: var(--tb-surface); border: 1px solid var(--tb-line); border-radius: 14px;
+  max-height: 320px; overflow-y: auto; padding: .3rem;
+}
+.search-results__item {
+  display: flex; align-items: center; gap: .7rem; width: 100%;
+  padding: .55rem .6rem; border: 0; background: none; border-radius: 10px; text-align: left;
+}
+.search-results__item:hover, .search-results__item.is-active { background: var(--tb-accent-soft); }
+.search-results__item .flag { font-size: 1.3rem; line-height: 1; }
+.search-results__item .name { font-weight: 600; }
+.search-results__item .where { color: var(--tb-muted); font-size: .82rem; }
+.search-results__item .off { margin-left: auto; font-size: .8rem; color: var(--tb-muted); font-variant-numeric: tabular-nums; }
+.search-results__empty { padding: .8rem; color: var(--tb-muted); font-size: .9rem; }
+
+/* ---------- place chips ---------- */
+.chip {
+  display: inline-flex; align-items: center; gap: .5rem;
+  background: var(--tb-chip-bg); border: 1px solid var(--tb-chip-line); color: var(--tb-chip-ink);
+  border-radius: 999px; padding: .4rem .5rem .4rem .8rem; font-weight: 600; font-size: .9rem;
+}
+.chip__off { font-weight: 500; font-size: .78rem; color: var(--tb-chip-ink); opacity: .8; font-variant-numeric: tabular-nums; }
+.chip__remove {
+  border: 0; background: var(--tb-chip-dot); color: var(--tb-chip-ink);
+  width: 1.4rem; height: 1.4rem; border-radius: 50%; line-height: 1; font-size: .9rem;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.chip__remove:hover { background: var(--tb-chip-dot); filter: brightness(1.35); }
+.chip--empty { background: var(--tb-surface-2); border-color: var(--tb-line); color: var(--tb-muted); padding-right: .9rem; }
+
+/* ---------- clock cards ---------- */
+.clock-card {
+  background: var(--tb-surface); border: 1px solid var(--tb-line); border-radius: 16px;
+  padding: 1rem 1.1rem; height: 100%; position: relative; overflow: hidden;
+}
+.clock-card::after {
+  content: ""; position: absolute; inset: auto 0 0 0; height: 4px; background: var(--tb-line);
+}
+.clock-card.is-day::after { background: linear-gradient(90deg, #ffb347, #ffd76e); }
+.clock-card.is-night::after { background: linear-gradient(90deg, #4a5b8c, #7b8ac4); }
+.clock-card__head { display: flex; align-items: flex-start; gap: .5rem; }
+.clock-card__flag { font-size: 1.5rem; line-height: 1.1; }
+.clock-card__city { font-weight: 700; font-size: 1rem; }
+.clock-card__country { color: var(--tb-muted); font-size: .8rem; }
+.clock-card__time {
+  font-size: clamp(2.1rem, 6vw, 2.9rem); font-weight: 800; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums; line-height: 1.1; margin-top: .35rem;
+}
+.clock-card__time .sec { font-size: .5em; color: var(--tb-muted); font-weight: 700; margin-left: .15em; }
+.clock-card__date { color: var(--tb-muted); font-size: .87rem; }
+.clock-card__meta { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .6rem; }
+.clock-card__actions { position: absolute; top: .6rem; right: .6rem; display: flex; gap: .2rem; opacity: 0; transition: opacity .15s; }
+.clock-card:hover .clock-card__actions, .clock-card:focus-within .clock-card__actions { opacity: 1; }
+
+/* There is no hover on a touch screen, so the base and remove buttons would
+   never appear there. Show them whenever the pointer cannot hover. */
+@media (hover: none) {
+  .clock-card__actions { opacity: 1; }
+}
+
+.tag {
+  font-size: .74rem; font-weight: 700; border-radius: 999px; padding: .22rem .55rem;
+  background: var(--tb-tag-bg); color: var(--tb-muted);
+}
+.tag--day { background: var(--tb-tag-day-bg); color: var(--tb-tag-day-ink); }
+.tag--night { background: var(--tb-tag-night-bg); color: var(--tb-tag-night-ink); }
+.tag--base { background: var(--tb-accent-soft); color: var(--tb-code-ink); }
+
+/* ---------- converter ---------- */
+.time-input { font-size: 1.5rem; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; }
+.time-input.is-bad { border-color: var(--tb-bad); box-shadow: 0 0 0 .25rem rgba(180, 50, 74, .2); }
+
+.conv-result {
+  background: linear-gradient(135deg, var(--tb-conv-a), var(--tb-conv-b));
+  border: 1px solid var(--tb-line); border-radius: 16px; padding: 1.1rem 1.2rem;
+}
+.conv-result__row { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
+.conv-block__label { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--tb-muted); }
+.conv-block__time { font-size: clamp(1.8rem, 5vw, 2.4rem); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.conv-block__date { color: var(--tb-muted); font-size: .88rem; }
+.conv-arrow { font-size: 1.6rem; color: var(--tb-accent); }
+.conv-badge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: var(--tb-surface); border: 1px solid var(--tb-line); border-radius: 999px;
+  padding: .35rem .75rem; font-size: .82rem; font-weight: 600; color: var(--tb-muted);
+}
+.conv-msg {
+  margin-top: 1rem; padding-top: .9rem; border-top: 1px dashed var(--tb-line);
+  font-size: .9rem; color: var(--tb-muted);
+}
+.conv-msg code { color: var(--tb-ink); background: var(--tb-surface); border: 1px solid var(--tb-line); border-radius: 8px; padding: .3rem .5rem; display: inline-block; }
+
+/* ---------- overlap ---------- */
+.overlap-summary { display: flex; flex-wrap: wrap; gap: .5rem; }
+.overlap-summary .conv-badge { background: var(--tb-good-soft); border-color: var(--tb-good-line); color: var(--tb-good); }
+
+.overlap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: .4rem; }
+.overlap-grid--dense { grid-template-columns: repeat(auto-fill, minmax(66px, 1fr)); gap: .3rem; }
+.overlap-grid--dense .overlap-cell { padding: .3rem .15rem; }
+.overlap-grid--dense .overlap-cell__a { font-size: .84rem; }
+.overlap-grid--dense .overlap-cell__b { font-size: .7rem; }
+.overlap-cell {
+  border-radius: 10px; padding: .4rem .2rem; text-align: center; border: 1px solid transparent;
+  font-variant-numeric: tabular-nums;
+}
+.overlap-cell__a { font-weight: 800; font-size: .95rem; }
+.overlap-cell__b { font-size: .75rem; opacity: .85; }
+.overlap-cell--good { background: var(--tb-good-soft); border-color: var(--tb-good-line); color: var(--tb-good); }
+.overlap-cell--ok   { background: var(--tb-ok-soft);   border-color: var(--tb-ok-line);   color: var(--tb-ok); }
+.overlap-cell--bad  { background: var(--tb-bad-soft);  border-color: var(--tb-bad-line);  color: var(--tb-bad); }
+.overlap-cell--now  { outline: 3px solid var(--tb-accent); outline-offset: 1px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 1rem; color: var(--tb-muted); font-size: .85rem; }
+.legend__item { display: inline-flex; align-items: center; gap: .4rem; }
+.swatch { width: .85rem; height: .85rem; border-radius: 5px; display: inline-block; }
+.swatch--good { background: var(--tb-good-soft); border: 1px solid var(--tb-good-line); }
+.swatch--ok   { background: var(--tb-ok-soft);   border: 1px solid var(--tb-ok-line); }
+.swatch--bad  { background: var(--tb-bad-soft);  border: 1px solid var(--tb-bad-line); }
+
+/* ---------- toast ---------- */
+.toast { border-radius: 12px; }
+
+/* ---------- theme toggle ---------- */
+.theme-toggle { width: 2.4rem; padding-left: 0; padding-right: 0; }
+.theme-toggle__light { display: none; }
+[data-bs-theme="dark"] .theme-toggle__dark { display: none; }
+[data-bs-theme="dark"] .theme-toggle__light { display: inline-block; }
+
+@media (max-width: 575.98px) {
+  .page-wrap { padding: 20px 14px 32px; }
+  .card-panel { padding: 1rem; }
+  .conv-arrow { display: none; }
+}

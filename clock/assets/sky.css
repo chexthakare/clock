@@ -1,0 +1,198 @@
+/* ============================================================
+   Time Bridge - animated sky background
+   Three.js paints the gradient, sun, moon, stars, aurora and
+   clouds. Clouds are generated from fbm in the fragment shader
+   and lit from the sun's position, so there are no image files.
+   The HUD chip is the only control.
+   ============================================================ */
+
+:root {
+  /* The HUD is glass sitting on the sky, so it follows the sky rather than the
+     theme, for the same reason the header and footer do. An opaque-enough
+     backdrop matters more than a tinted one: at .07 alpha the Rain button
+     left only 2.5:1 against a midday sky, while the readout at .58 was fine. */
+  --sky-hud-bg: rgba(255, 255, 255, .72);
+  --sky-hud-line: rgba(255, 255, 255, .82);
+  --sky-hud-ink: #16233a;
+  --sky-hud-muted: #3f4c63;
+  --sky-hud-btn-off: rgba(255, 255, 255, .5);
+  --sky-hud-shadow: rgba(9, 16, 32, .18);
+}
+
+[data-sky-phase="night"] {
+  --sky-hud-bg: rgba(10, 16, 30, .74);
+  --sky-hud-line: rgba(255, 255, 255, .18);
+  --sky-hud-ink: #eef3ff;
+  --sky-hud-muted: #b9c6de;
+  --sky-hud-btn-off: rgba(10, 16, 30, .58);
+  --sky-hud-shadow: rgba(0, 0, 0, .5);
+}
+
+/* ---------- the layer ---------- */
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+/* The dark backing only exists to avoid a flash before the first frame, so it
+   is applied only once sky.js has confirmed WebGL is live. If sky.js is
+   blocked, 404s or fails to parse, this layer would otherwise sit in front of
+   the light theme's page background as a solid navy rectangle. */
+[data-sky="on"] .sky { background: #0b1220; }
+
+.sky__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- clouds ----------
+   Drawn in the fragment shader from fbm density with a real lighting
+   term, so there is no sprite, no mask and no image request. The cut-out
+   sprites this replaced were pure white with shape only in their alpha,
+   so a gradient fill could only ever give a flat lens with a hard tonal
+   break across it; noise gives billowed edges and lit tops instead. */
+
+/* Edge darkening so white text and cards keep their contrast. */.sky__vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 50% 38%, transparent 42%, rgba(6, 11, 24, .38) 100%),
+    linear-gradient(180deg, rgba(6, 11, 24, .22) 0%, transparent 26%, transparent 62%, rgba(6, 11, 24, .3) 100%);
+}
+
+/* Very light animated grain, stops the gradient from looking banded. */
+.sky__grain {
+  position: absolute;
+  inset: -50%;
+  opacity: .05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: sky-grain 1.1s steps(4) infinite;
+}
+
+@keyframes sky-grain {
+  0%   { transform: translate3d(0, 0, 0); }
+  25%  { transform: translate3d(-2%, 1.5%, 0); }
+  50%  { transform: translate3d(1.5%, -1%, 0); }
+  75%  { transform: translate3d(-1%, -2%, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+.sky__fallback {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #101a33 0%, #1d2b4d 55%, #33405e 100%);
+}
+
+/* No WebGL, or the file failed to load: keep the plain page background. */
+.sky.is-off { display: none; }
+
+/* ---------- the hero readout ---------- */
+.sky-hud {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-top: 1.15rem;
+}
+
+.sky-hud__readout {
+  display: inline-flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .45rem .95rem .45rem .7rem;
+  border-radius: 999px;
+  background: var(--sky-hud-bg);
+  border: 1px solid var(--sky-hud-line);
+  box-shadow: 0 6px 22px var(--sky-hud-shadow);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  color: var(--sky-hud-ink);
+  font-size: .84rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.sky-hud__icon {
+  flex: 0 0 auto;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--sky-hud-btn-off);
+  font-size: 1rem;
+}
+
+.sky-hud__text { display: inline-flex; flex-direction: column; }
+.sky-hud__place { font-weight: 700; }
+.sky-hud__phase { color: var(--sky-hud-muted); font-weight: 500; font-size: .78rem; }
+
+.sky-hud__times {
+  display: inline-flex;
+  gap: .7rem;
+  margin-left: .35rem;
+  padding-left: .8rem;
+  border-left: 1px solid var(--sky-hud-line);
+  color: var(--sky-hud-muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: .78rem;
+}
+
+.sky-hud__time { display: inline-flex; align-items: center; gap: .3rem; }
+
+.sky-hud__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .5rem .9rem;
+  border-radius: 999px;
+  border: 1px solid var(--sky-hud-line);
+  background: var(--sky-hud-btn-off);
+  color: var(--sky-hud-ink);
+  font-size: .84rem;
+  font-weight: 600;
+  box-shadow: 0 6px 22px var(--sky-hud-shadow);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  transition: background-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.sky-hud__btn:hover { transform: translateY(-1px); }
+.sky-hud__btn:focus-visible { outline: 3px solid var(--tb-accent); outline-offset: 2px; }
+
+/* Darker than the accent it replaces: white on the old #22b8d8 end measured
+   2.36:1, which is unreadable for a 0.84rem label. This end pair clears 5:1. */
+.sky-hud__btn[aria-pressed="true"] {
+  background: linear-gradient(135deg, #1d4ed8, #0e7490);
+  border-color: transparent;
+  color: #fff;
+}
+
+.sky-hud__btn[aria-pressed="true"] .bi { animation: sky-pulse 1.6s ease-in-out infinite; }
+
+@keyframes sky-pulse {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(2px); }
+}
+
+@media (max-width: 575.98px) {
+  .sky-hud__times { margin-left: 0; padding-left: 0; border-left: 0; }
+  /* The label shrinks rather than disappearing: the button is the only way to
+     turn rain on, and an unlabelled icon is not obvious enough. */
+  .sky-hud__btnlabel { font-size: .78rem; }
+  .sky-hud__btn { padding: .45rem .7rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky__grain { animation: none; }
+  .sky-hud__btn, .sky-hud__btn[aria-pressed="true"] .bi { animation: none; transition: none; }
+  .sky-hud__btn:hover { transform: none; }
+}
